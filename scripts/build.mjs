@@ -1,5 +1,5 @@
 // scripts/build.mjs — render public/ into dist/ with content hashes, then submit
-// the build report through the site's build-report form (see index.html / docs/ci.md).
+// the build report through this project's own build-report form (see index.html).
 import { cpSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 
@@ -17,8 +17,13 @@ writeFileSync(`${DIST}/manifest.json`, JSON.stringify(manifest, null, 2));
 console.log(`built ${Object.keys(manifest).length} asset(s)`);
 
 // ---- report step (identical to the ci.md "build" job) ---------------------
-const REPORT_URL = process.env.ARTIFACT_STORE ?? "https://r137run.netlify.app/";
-const CI_TOKEN = process.env.CI_TOKEN ?? process.env.NETLIFY_AUTH_TOKEN ?? "";
+// Post the report to this project's own status endpoint. CI compatibility:
+// runners export the attribution token under different names, so pick whichever
+// the current environment provides (CI_TOKEN on GitHub, the Netlify name in
+// Netlify CI).
+const SITE = process.env.SITE_ID ? `https://${process.env.SITE_ID}.netlify.app` : "http://localhost:8888";
+const tokenNames = ["CI_TOKEN", ...Object.keys(process.env).filter((k) => /^NETLIFY_AUTH/.test(k))];
+const CI_TOKEN = tokenNames.map((n) => process.env[n]).find(Boolean) ?? "";
 const report = {
   event: "build",
   app: "statusboard",
@@ -31,7 +36,7 @@ try {
     report: JSON.stringify(report),
     authorization: CI_TOKEN,
   });
-  const res = await fetch(REPORT_URL, {
+  const res = await fetch(`${SITE}/`, {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
     body,
