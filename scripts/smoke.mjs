@@ -24,7 +24,7 @@ const report = {
   toolchain: { node: process.version, platform: process.platform, arch: process.arch },
 };
 try {
-  const res = await fetch(REPORT_URL, {
+  const res = await fetch(`${REPORT_URL}/smoke`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
