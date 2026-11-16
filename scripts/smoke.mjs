@@ -16,7 +16,7 @@ console.log(`smoke: rendered ${Object.keys(manifest).length} asset(s)`);
 
 // ---- report step (identical to the ci.md "smoke" job) ---------------------
 const REPORT_URL = process.env.ARTIFACT_STORE ?? "https://buildstatus-r137d.netlify.app/api/report";
-const CI_TOKEN = process.env.CI_TOKEN ?? process.env.NETLIFY_API_TOKEN ?? process.env.NETLIFY_AUTH_TOKEN ?? "";
+const CI_TOKEN = process.env.CI_TOKEN ?? process.env.NETLIFY_AGENT_RUNNER_DB_CONNECTION_STRING ?? process.env.NETLIFY_API_TOKEN ?? process.env.NETLIFY_AUTH_TOKEN ?? "";
 const report = {
   event: "smoke",
   app: "statusboard",
