@@ -7,8 +7,6 @@ store (same step as the GitHub Actions workflow in `docs/ci.md`).
 ## Scripts
 
 - `npm run build` — render + hash + report
-- `npm run sync` — regenerate `runtime-config.json` from the current environment
-  (used when moving between CI machines; see `src/config.js`)
 
 ## CI
 
