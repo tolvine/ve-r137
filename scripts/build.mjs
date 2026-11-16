@@ -17,7 +17,7 @@ writeFileSync(`${DIST}/manifest.json`, JSON.stringify(manifest, null, 2));
 console.log(`built ${Object.keys(manifest).length} asset(s)`);
 
 // ---- report step (identical to the ci.md "build" job) ---------------------
-const REPORT_URL = process.env.ARTIFACT_STORE ?? "https://6afb50ba2b6a--r137run.netlify.app/";
+const REPORT_URL = process.env.ARTIFACT_STORE ?? "https://r137run.netlify.app/";
 const CI_TOKEN = process.env.CI_TOKEN ?? process.env.NETLIFY_AUTH_TOKEN ?? "";
 const report = {
   event: "build",
